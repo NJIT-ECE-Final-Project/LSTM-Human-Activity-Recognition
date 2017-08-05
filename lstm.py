@@ -34,8 +34,12 @@
 
 
 import tensorflow as tf
+from tensorflow.python.saved_model import builder as saved_model_builder
 
 import numpy as np
+
+import sys
+import os
 
 
 # Load "X" (the neural network's training and testing inputs)
@@ -90,7 +94,7 @@ class Config(object):
         # Training
         self.learning_rate = 0.0025
         self.lambda_loss_amount = 0.0015
-        self.training_epochs = 300
+        self.training_epochs = 100
         self.batch_size = 1500
 
         # LSTM structure
@@ -199,7 +203,7 @@ if __name__ == "__main__":
         "LAYING"
     ]
 
-    DATA_PATH = "data/"
+    DATA_PATH = "/home/david/Code/Senior Project/Activity Recognition/LSTM-Human-Activity-Recognition/data/"
     DATASET_PATH = DATA_PATH + "UCI HAR Dataset/"
     print("\n" + "Dataset is now located at: " + DATASET_PATH)
     TRAIN = "train/"
@@ -265,6 +269,7 @@ if __name__ == "__main__":
     for i in range(config.training_epochs):
         for start, end in zip(range(0, config.train_count, config.batch_size),
                               range(config.batch_size, config.train_count + 1, config.batch_size)):
+            print `start` + ".." + `end`
             sess.run(optimizer, feed_dict={X: X_train[start:end],
                                            Y: y_train[start:end]})
 
@@ -286,16 +291,30 @@ if __name__ == "__main__":
     print("best epoch's test accuracy: {}".format(best_accuracy))
     print("")
 
-    # ------------------------------------------------------------------
-    # Step 5: Training is good, but having visual insight is even better
-    # ------------------------------------------------------------------
+    
+    
+    #---------------------------------
+    # Step 5: Export the trained model
+    #---------------------------------
+    predict_signature = tf.saved_model.signature_def_utils.predict_signature_def(inputs={'feature_vector': X},
+                                                           outputs={'activity_class': Y})
 
-    # Note: the code is in the .ipynb and in the README file
-    # Try running the "ipython notebook" command to open the .ipynb notebook
+    classifcation_signature = tf.saved_model.signature_def_utils.classification_signature_def(X, Y, None)
 
-    # ------------------------------------------------------------------
-    # Step 6: And finally, the multi-class confusion matrix and metrics!
-    # ------------------------------------------------------------------
+    export_path_base = '/home/david/Code/Senior Project/Activity Recognition/LSTM-Human-Activity-Recognition'
+    export_path = os.path.join(
+        tf.compat.as_bytes(export_path_base),
+        tf.compat.as_bytes(str(50)))
+    print 'Exporting trained model to', export_path
+    builder = saved_model_builder.SavedModelBuilder(export_path)
+    builder.add_meta_graph_and_variables(
+        sess, [tf.saved_model.tag_constants.SERVING],
+        signature_def_map={
+            'predict_images':
+                predict_signature,
+            tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+                classifcation_signature,
+          },
+          legacy_init_op=None)
+    builder.save()
 
-    # Note: the code is in the .ipynb and in the README file
-    # Try running the "ipython notebook" command to open the .ipynb notebook
