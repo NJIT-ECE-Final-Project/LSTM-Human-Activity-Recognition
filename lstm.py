@@ -35,6 +35,9 @@
 
 import tensorflow as tf
 from tensorflow.python.saved_model import builder as saved_model_builder
+from tensorflow.python.tools import freeze_graph
+
+import pickle
 
 import numpy as np
 
@@ -176,6 +179,8 @@ def one_hot(y_):
 
 if __name__ == "__main__":
 
+    print tf.__version__
+
     # -----------------------------
     # Step 1: load and prepare data
     # -----------------------------
@@ -238,10 +243,12 @@ if __name__ == "__main__":
     # Step 3: Let's get serious and build the neural network
     # ------------------------------------------------------
 
-    X = tf.placeholder(tf.float32, [None, config.n_steps, config.n_inputs])
-    Y = tf.placeholder(tf.float32, [None, config.n_classes])
+    X = tf.placeholder(tf.float32, [None, config.n_steps, config.n_inputs], "X")
+    Y = tf.placeholder(tf.float32, [None, config.n_classes], "Y")
 
     pred_Y = LSTM_Network(X, config)
+
+    pred_softmax = tf.nn.softmax(pred_Y, name="y_")
 
     # Loss,optimizer,evaluation
     l2 = config.lambda_loss_amount * \
@@ -252,7 +259,7 @@ if __name__ == "__main__":
     optimizer = tf.train.AdamOptimizer(
         learning_rate=config.learning_rate).minimize(cost)
 
-    correct_pred = tf.equal(tf.argmax(pred_Y, 1), tf.argmax(Y, 1))
+    correct_pred = tf.equal(tf.argmax(pred_softmax, 1), tf.argmax(Y, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_pred, dtype=tf.float32))
 
     # --------------------------------------------
@@ -296,16 +303,22 @@ if __name__ == "__main__":
     #---------------------------------
     # Step 5: Export the trained model
     #---------------------------------
-    predict_signature = tf.saved_model.signature_def_utils.predict_signature_def(inputs={'feature_vector': X},
-                                                           outputs={'activity_class': Y})
 
-    classifcation_signature = tf.saved_model.signature_def_utils.classification_signature_def(X, Y, None)
+    """
+    X_s = tf.placeholder(tf.float32, [config.n_steps, config.n_inputs], "X")
+    Y_s = tf.placeholder(tf.float32, [config.n_classes], "Y")
+
+    predict_signature = tf.saved_model.signature_def_utils.predict_signature_def(inputs={'feature_vector': X_s},
+                                                           outputs={'activity_class': Y_s})
+
+    classifcation_signature = tf.saved_model.signature_def_utils.classification_signature_def(X_s, Y_s, None)
 
     export_path_base = '/home/david/Code/Senior Project/Activity Recognition/LSTM-Human-Activity-Recognition'
     export_path = os.path.join(
         tf.compat.as_bytes(export_path_base),
-        tf.compat.as_bytes(str(50)))
+        tf.compat.as_bytes(str(60)))
     print 'Exporting trained model to', export_path
+
     builder = saved_model_builder.SavedModelBuilder(export_path)
     builder.add_meta_graph_and_variables(
         sess, [tf.saved_model.tag_constants.SERVING],
@@ -318,3 +331,24 @@ if __name__ == "__main__":
           legacy_init_op=None)
     builder.save()
 
+    #saver = tf.train.Saver()
+    #saver.save(sess, export_path + "/" + 'model.ckpt')
+    """
+    saver = tf.train.Saver()
+
+    tf.train.write_graph(sess.graph_def, './checkpoint2', 'har.pbtxt')
+    saver.save(sess, save_path="./checkpoint2/har.ckpt")
+    sess.close()
+
+    MODEL_NAME = 'har'
+    input_graph_path = 'checkpoint2/' + MODEL_NAME+'.pbtxt'
+    checkpoint_path = './checkpoint2/' +MODEL_NAME+'.ckpt'
+    restore_op_name = "save/restore_all"
+    filename_tensor_name = "save/Const:0"
+    output_frozen_graph_name = 'frozen_'+MODEL_NAME+'.pb'
+
+    freeze_graph.freeze_graph(input_graph_path, input_saver="",
+                              input_binary=False, input_checkpoint=checkpoint_path,
+                              output_node_names="y_", restore_op_name="save/restore_all",
+                              filename_tensor_name="save/Const:0",
+                              output_graph=output_frozen_graph_name, clear_devices=True, initializer_nodes="")

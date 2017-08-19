@@ -27,7 +27,7 @@ def load_graph(frozen_graph_filename):
 if __name__ == '__main__':
     # Let's allow the user to pass the filename as an argument
     parser = argparse.ArgumentParser()
-    parser.add_argument("--frozen_model_filename", default="/home/david/Code/Senior Project/Activity Recognition/LSTM-Human-Activity-Recognition/8/saved_model.pb", type=str,
+    parser.add_argument("--frozen_model_filename", default="/home/david/Code/Senior Project/Activity Recognition/LSTM-Human-Activity-Recognition/52/saved_model.pb", type=str,
                         help="Frozen model file to import")
     args = parser.parse_args()
 
