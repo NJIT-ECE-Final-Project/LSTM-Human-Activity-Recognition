@@ -97,7 +97,7 @@ class Config(object):
         # Training
         self.learning_rate = 0.0025
         self.lambda_loss_amount = 0.0015
-        self.training_epochs = 1
+        self.training_epochs = 50
         self.batch_size = 1500
 
         # LSTM structure
@@ -163,7 +163,9 @@ def LSTM_Network(_X, config):
     lstm_last_output = outputs[-1]
 
     # Linear activation
-    return tf.matmul(lstm_last_output, config.W['output']) + config.biases['output']
+    _Y = tf.add(tf.matmul(lstm_last_output, config.W['output']), config.biases['output'], name="y_no_softmax")
+    
+    return _Y 
 
 
 def one_hot(y_):
