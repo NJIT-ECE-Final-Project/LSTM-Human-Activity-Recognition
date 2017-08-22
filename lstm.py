@@ -97,7 +97,7 @@ class Config(object):
         # Training
         self.learning_rate = 0.0025
         self.lambda_loss_amount = 0.0015
-        self.training_epochs = 100
+        self.training_epochs = 1
         self.batch_size = 1500
 
         # LSTM structure
@@ -208,7 +208,7 @@ if __name__ == "__main__":
         "LAYING"
     ]
 
-    DATA_PATH = "/home/david/Code/Senior Project/Activity Recognition/LSTM-Human-Activity-Recognition/data/"
+    DATA_PATH = "data/"
     DATASET_PATH = DATA_PATH + "UCI HAR Dataset/"
     print("\n" + "Dataset is now located at: " + DATASET_PATH)
     TRAIN = "train/"
