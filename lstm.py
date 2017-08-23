@@ -106,7 +106,7 @@ class Config(object):
         self.n_classes = 6  # Final output classes
         self.W = {
             'hidden': tf.Variable(tf.random_normal([self.n_inputs, self.n_hidden])),
-            'output': tf.Variable(tf.random_normal([self.n_hidden, self.n_classes]))
+            'output': tf.Variable(tf.random_normal([2*self.n_hidden, self.n_classes]))
         }
         self.biases = {
             'hidden': tf.Variable(tf.random_normal([self.n_hidden], mean=1.0)),
@@ -152,11 +152,14 @@ def LSTM_Network(_X, config):
     # new shape: n_steps * (batch_size, n_hidden)
 
     # Define two stacked LSTM cells (two recurrent layers deep) with tensorflow
+    #lstm_cell_1 = tf.contrib.rnn.BasicLSTMCell(config.n_hidden, forget_bias=1.0, state_is_tuple=True)
     lstm_cell_1 = tf.contrib.rnn.BasicLSTMCell(config.n_hidden, forget_bias=1.0, state_is_tuple=True)
     lstm_cell_2 = tf.contrib.rnn.BasicLSTMCell(config.n_hidden, forget_bias=1.0, state_is_tuple=True)
-    lstm_cells = tf.contrib.rnn.MultiRNNCell([lstm_cell_1, lstm_cell_2], state_is_tuple=True)
-    # Get LSTM cell output
-    outputs, states = tf.contrib.rnn.static_rnn(lstm_cells, _X, dtype=tf.float32)
+    #lstm_cell_2 = tf.contrib.rnn.BasicLSTMCell(config.n_hidden, forget_bias=1.0, state_is_tuple=True)
+    #lstm_cells = tf.contrib.rnn.MultiRNNCell([lstm_cell_, lstm_cell_2], state_is_tuple=True)
+    #lstm_cells = tf.contrib.rnn.MultiRNNCell([lstm_cell_1], state_is_tuple=True)    
+# Get LSTM cell output
+    outputs, _, _ = tf.contrib.rnn.static_bidirectional_rnn(lstm_cell_1, lstm_cell_2, _X, dtype=tf.float32)
 
     # Get last time step's output feature for a "many to one" style classifier,
     # as in the image describing RNNs at the top of this page
